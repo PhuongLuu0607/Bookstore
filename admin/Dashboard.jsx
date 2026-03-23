@@ -1,0 +1,185 @@
+
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+export default function Thongke() {
+
+  const [tongSoKhachHang, setTongSoKhachHang] = useState(0);
+  const [soLuongChuaXuLy, setSoLuongChuaXuLy] = useState(0);
+  const [doanhThuNam, setDoanhThuNam] = useState(0);
+  const [doanhThuThang, setDoanhThuThang] = useState(0);
+
+
+  // Lấy tháng và năm hiện tại
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentDate = new Date().toISOString().slice(0, 10);
+
+  const fetchTongSoKhachHang = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/getallkh');
+      setTongSoKhachHang(response.data.length);
+    } catch (error) {
+      console.error("Lỗi khi lấy tổng số khách hàng:", error);
+    }
+  };
+
+  const fetchSoLuongChuaXuLy = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/getalldonhang');
+      const danhSachDonHang = response.data;
+      console.log(danhSachDonHang)
+      const countChuaXuLy = danhSachDonHang.filter(lich => lich.trang_thai === 1).length;
+      setSoLuongChuaXuLy(countChuaXuLy);
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu đơn hàng:", error);
+    }
+  };
+
+  const fetchDoanhThuNam = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/getalldonhang');
+      const danhSach = response.data;
+  
+      const namHienTai = new Date().getFullYear();
+      const tongDoanhThuNam = danhSach
+        .filter(lich => new Date(lich.ngay_dat_hang).getFullYear() === namHienTai && lich.trang_thai_thanh_toan === 2)
+        .reduce((tong, lich) => tong + (lich.tong_tien || 0), 0);
+  
+      console.log("Doanh thu năm nay:", tongDoanhThuNam);
+      setDoanhThuNam(tongDoanhThuNam);
+    } catch (error) {
+      console.error("Lỗi khi lấy doanh thu năm:", error);
+    }
+  };
+
+  const fetchDoanhThuThang = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/getalldonhang');
+      const danhSachLichKham = response.data;
+  
+      const ngayHienTai = new Date();
+      const thang = ngayHienTai.getMonth(); // từ 0–11
+      const nam = ngayHienTai.getFullYear();
+  
+      const tongDoanhThuThang = danhSachLichKham
+        .filter(lich => {
+          const ngaymua = new Date(lich.ngay_dat_hang);
+          return ngaymua.getFullYear() === nam && ngaymua.getMonth() === thang && lich.trang_thai_thanh_toan === 2;
+        })
+        .reduce((tong, lich) => tong + (lich.tong_tien || 0), 0);
+  
+      console.log("Doanh thu tháng này:", tongDoanhThuThang);
+      setDoanhThuThang(tongDoanhThuThang); // Bạn cần tạo state: const [doanhThuThang, setDoanhThuThang] = useState(0);
+    } catch (error) {
+      console.error("Lỗi khi lấy doanh thu tháng:", error);
+    }
+  };
+
+   const formatVND = (number) => {
+    return number.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  };
+  
+
+  useEffect(() => {
+    fetchTongSoKhachHang();
+    fetchSoLuongChuaXuLy();
+    fetchDoanhThuNam();
+    fetchDoanhThuThang();
+  }, []);
+
+  return (
+    <div>
+      <div className="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 className="h3 mb-0 text-gray-800">Dashboard</h1>
+                        <a href="#" className="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
+                                className="fas fa-download fa-sm text-white-50"></i>Download data</a>
+                    </div>
+                        <div className="row">
+
+                        {/* <!-- Earnings (Monthly) Card Example --> */}
+                        <div className="col-xl-3 col-md-6 mb-4">
+                            <div className="card border-left-primary shadow h-100 py-2">
+                                <div className="card-body">
+                                    <div className="row no-gutters align-items-center">
+                                        <div className="col mr-2">
+                                            <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Income (This month)</div>
+                                            <div className="h5 mb-0 font-weight-bold text-gray-800">{formatVND(doanhThuThang)}</div>
+                                        </div>
+                                        <div className="col-auto">
+                                            <i className="fas fa-calendar fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* <!-- Earnings (Monthly) Card Example --> */}
+                        <div className="col-xl-3 col-md-6 mb-4">
+                            <div className="card border-left-success shadow h-100 py-2">
+                                <div className="card-body">
+                                    <div className="row no-gutters align-items-center">
+                                        <div className="col mr-2">
+                                            <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Annual Income</div>
+                                            <div className="h5 mb-0 font-weight-bold text-gray-800">{formatVND(doanhThuNam)}</div>
+                                        </div>
+                                        <div className="col-auto">
+                                            <i className="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* <!-- Pending Requests Card Example --> */}
+                        <div className="col-xl-3 col-md-6 mb-4">
+                            <div className="card border-left-warning shadow h-100 py-2">
+                                <div className="card-body">
+                                    <div className="row no-gutters align-items-center">
+                                        <div className="col mr-2">
+                                            <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Resolution Request</div>
+                                            <div className="h5 mb-0 font-weight-bold text-gray-800">{soLuongChuaXuLy}</div>
+                                        </div>
+                                        <div className="col-auto">
+                                            <i className="fas fa-comments fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-xl-3 col-md-6 mb-4">
+                            <div className="card border-left-warning shadow h-100 py-2">
+                                <div className="card-body">
+                                    <div className="row no-gutters align-items-center">
+                                        <div className="col mr-2">
+                                            <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Total customer</div>
+                                            <div className="h5 mb-0 font-weight-bold text-gray-800">{tongSoKhachHang}</div>
+                                        </div>
+                                        <div className="col-auto">
+                                            <i className="fas fa-comments fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="row justify-content-center mt-4">
+                   <div className="col-12 text-center">
+                    <img
+                        src="../images/123.jpg"
+                        alt="Báo cáo tổng quan"
+                        className="img-fluid rounded shadow"
+                        style={{ width: '100%' }}
+                    />
+                </div>
+
+                </div>
+    </div>
+  )
+}
